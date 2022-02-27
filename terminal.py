@@ -935,7 +935,7 @@ def seas_charts(tick, cal_input):
 
 #@st.cache(suppress_st_warning=True)
 def load_ac_tweets():
-    bt='AAAAAAAAAAAAAAAAAAAAAA%2FSYwEAAAAAyTWPtrcoKGiUL5DKCOBLa5FLf3Y%3D2MSFbRb9gBIMDplCzTwv8eiZWFyWyclLLfBaQiLdX4fqhAELyJ'
+    bt=st.secrets["TWEEPY_BT"]
     client = tweepy.Client(bearer_token=bt)
     TWITTER_USERNAMES = ['Xiuying', 'artem_essega','MetaaL_','TradesWithTom','nutfreak26','SpinTrades'] 
     z=0
