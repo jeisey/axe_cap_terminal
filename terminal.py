@@ -1002,7 +1002,7 @@ def load_ac_ideas():
 
 #### USER INPUT / INITIAL SIDEBAR VARIABLES ####
 st.sidebar.image('Axe-cap-custom-logo.png')
-
+st.sidebar.write("**[Submit trade idea?](https://forms.gle/aNfTSnnjuss68Nrq5)**")
 #Placeholder to implement once a second view/dashboard has been created to toggle between.
 #view_type = st.sidebar.selectbox(
 #     'Select dashboard view',
@@ -1036,8 +1036,6 @@ else:
     put_vol = True
     call_OI = False
     call_vol = True
-
-st.sidebar.write("**[Submit trade idea?](https://forms.gle/aNfTSnnjuss68Nrq5)**")
     
 st.sidebar.caption('The data and information shared here is not financial advice. Investments or strategies mentioned on this website may not be suitable for you. Data and material on this website may be incorrect or delaying real-time financial data at any given time.')
 
