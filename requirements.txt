@@ -4,5 +4,5 @@ numpy==1.21.5
 yfinance==0.1.62
 plotly==5.1.0
 pandas_ta==0.3.2b0
-ta-lib==0.4.19
+talib==0.4.19
 tweepy==4.4.0
