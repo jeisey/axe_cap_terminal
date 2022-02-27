@@ -13,7 +13,7 @@ import tweepy
 import webbrowser
 
 ##>>PAGE LAYOUT <<##
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="Axe Cap Terminal", page_icon="💡",layout="wide")
 
 ##>> FUNCTIONS <<##
 
