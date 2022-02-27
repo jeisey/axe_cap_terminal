@@ -965,7 +965,7 @@ def load_ac_ideas():
         #rename columns
         #importantly updating the 'image_upload' into correct format
         #convert ticker to uppercase
-    gdf = gdf.rename(columns={ "Who the fk are you?": "username",'Enter stock ticker:':'ticker','What\'s your brilliant idea?':'idea',
+    gdf = gdf.rename(columns={ "Select your username": "username",'Enter stock ticker:':'ticker','Describe your trade idea':'idea',
                                 'What is your Price Target? (enter number)': 'price_target', 'What day do you project this Price Target to be hit by?':'pt_date',
                                 'Upload image to accompany idea':'image_upload'
                     })
