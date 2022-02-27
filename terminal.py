@@ -7,7 +7,6 @@ import datetime
 from datetime import timedelta
 from plotly.subplots import make_subplots
 import pandas_ta as ta
-import talib
 import time
 import calendar
 import tweepy
