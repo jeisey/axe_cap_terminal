@@ -1037,11 +1037,7 @@ else:
     call_OI = False
     call_vol = True
 
-#button1 = st.sidebar.button("Click me")
-#if button1:
-#    st.sidebar.write("Kev is a bitch")
-if st.sidebar.button('Submit an idea?'):
-    webbrowser.open_new_tab('https://forms.gle/aNfTSnnjuss68Nrq5')
+st.sidebar.write("**[Submit trade idea?](https://forms.gle/aNfTSnnjuss68Nrq5)**")
     
 st.sidebar.caption('The data and information shared here is not financial advice. Investments or strategies mentioned on this website may not be suitable for you. Data and material on this website may be incorrect or delaying real-time financial data at any given time.')
 
