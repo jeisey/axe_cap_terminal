@@ -282,8 +282,9 @@ def options_chain(symbol):
 @st.cache(allow_output_mutation=True)
 def load_data(symbol):
     try:
-        ticker_info = yf.Ticker(symbol)
-        stock_data = yf.download(tickers=symbol,period=tp, interval=intv)
+        symb = symbol.upper()
+        ticker_info = yf.Ticker(symb)
+        stock_data = yf.download(tickers=symb,period=tp, interval=intv)
         stock_data = stock_data.rename(columns={"Close": "close", "High": "high","Low":"low","Open":"open"})
         stock_data['hl2']=(stock_data['high']+stock_data['low'])/2
         stock_data['month'] = stock_data.index.to_numpy().astype('datetime64[M]')
@@ -292,7 +293,7 @@ def load_data(symbol):
         stock_data['gap_range'] = round(stock_data['open']-(stock_data.shift(periods=1).close),4)
         stock_data['bullbear'] = stock_data['close'] >= (stock_data.shift(periods=1).close)
         stock_data['me_range'] =  round(stock_data['high']-(stock_data.shift(periods=1).close),4) #max extension
-        msd = yf.download(tickers=symbol,period=tp, interval='1mo')
+        msd = yf.download(tickers=symb,period=tp, interval='1mo')
         msd = msd.reset_index()
         msd = msd.rename(columns={"Close": "m_close", "High": "m_high","Low":"m_low","Open":"m_open","Adj Close":"m_Adj_Close","Volume":"m_volume","Date":"month"})
         stock_data = stock_data.reset_index().merge(msd,on='month' ,how="left").set_index('Date')
