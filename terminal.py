@@ -1003,9 +1003,6 @@ def load_ac_ideas():
 
 #### USER INPUT / INITIAL SIDEBAR VARIABLES ####
 st.sidebar.image('Axe-cap-custom-logo.png')
-if st.sidebar.button("Refresh Data (Updates Chain)"):
-    # Clear values from *all* st.cache functions:
-    st.legacy_caching.clear_cache()
 st.sidebar.write("**[Submit trade idea?](https://forms.gle/aNfTSnnjuss68Nrq5)**")
 #Placeholder to implement once a second view/dashboard has been created to toggle between.
 #view_type = st.sidebar.selectbox(
@@ -1091,7 +1088,9 @@ st.plotly_chart(main_chart, use_container_width=True,config=plotly_config)
 
 # ----------------------------------- PLOT PUT/CALL RATIOS -----------------------------------
 st.subheader('$'+utick.upper()+' Option Chain')
-
+if st.button("Refresh Data (Updates Option Chain)"):
+    # Clear values from *all* st.cache functions:
+    st.legacy_caching.clear_cache()
 tpcr, wpcr = load_pcratios()
 pcr_col_1, pcr_col_2 = st.columns(2)
 pcr_col_1.plotly_chart(tpcr, config={'displayModeBar': False})
