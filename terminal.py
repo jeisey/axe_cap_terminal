@@ -11,6 +11,7 @@ import time
 import calendar
 import tweepy
 import webbrowser
+import numba as nb
 
 ##>>PAGE LAYOUT <<##
 st.set_page_config(page_title="Axe Cap Terminal", page_icon="💡",layout="wide")
@@ -25,76 +26,76 @@ def load_indicator_strategy():
             # >>> OVERLAP INDICATORS <<< #
             
             #SMA
-            {"kind": "sma","close": "Adj_close", "length": 5},
-            {"kind": "sma","close": "Adj_close", "length": 10},
-            {"kind": "sma","close": "Adj_close", "length": 15},
-            {"kind": "sma","close": "Adj_close", "length": 20},
-            {"kind": "sma","close": "Adj_close", "length": 50},
-            {"kind": "sma","close": "Adj_close", "length": 100},
-            {"kind": "sma","close": "Adj_close", "length": 200},
+            {"kind": "sma","close": "Adj Close", "length": 5},
+            {"kind": "sma","close": "Adj Close", "length": 10},
+            {"kind": "sma","close": "Adj Close", "length": 15},
+            {"kind": "sma","close": "Adj Close", "length": 20},
+            {"kind": "sma","close": "Adj Close", "length": 50},
+            {"kind": "sma","close": "Adj Close", "length": 100},
+            {"kind": "sma","close": "Adj Close", "length": 200},
             
             #EMA
-            {"kind": "ema", "close": "Adj_close", "length": 5},
-            {"kind": "ema", "close": "Adj_close", "length": 10},
-            {"kind": "ema", "close": "Adj_close", "length": 15},
-            {"kind": "ema", "close": "Adj_close", "length": 20},
-            {"kind": "ema", "close": "Adj_close", "length": 50},
-            {"kind": "ema", "close": "Adj_close", "length": 100},
-            {"kind": "ema", "close": "Adj_close", "length": 200},
+            {"kind": "ema", "close": "Adj Close", "length": 5},
+            {"kind": "ema", "close": "Adj Close", "length": 10},
+            {"kind": "ema", "close": "Adj Close", "length": 15},
+            {"kind": "ema", "close": "Adj Close", "length": 20},
+            {"kind": "ema", "close": "Adj Close", "length": 50},
+            {"kind": "ema", "close": "Adj Close", "length": 100},
+            {"kind": "ema", "close": "Adj Close", "length": 200},
             
             #HMA
             {"kind": "hma", "close": "hl2", "length": 21},
 
             
             #VWAP
-            {"kind": "vwap", "high":"high", "low":"low", "close": "Adj_close", "volume":"Volume"},
+            {"kind": "vwap", "high":"high", "low":"low", "close": "Adj Close", "volume":"Volume"},
             
             # >>> MOMENTUM INDICATORS <<< #
             
             #Momentum
-            {"kind": "mom", "close": "Adj_close", "length":1},
-            {"kind": "mom", "close": "Adj_close", "length":5},
+            {"kind": "mom", "close": "Adj Close", "length":1},
+            {"kind": "mom", "close": "Adj Close", "length":5},
             
             #RSI
-            {"kind": "rsi", "close": "Adj_close"},
+            {"kind": "rsi", "close": "Adj Close"},
             
             #Stoch_RSI
-            {"kind": "stochrsi", "close":"Adj_close"},
+            {"kind": "stochrsi", "close":"Adj Close"},
             
             #QQE_Slow
-            {"kind": "qqe", "close": "Adj_close", "length":20, 
+            {"kind": "qqe", "close": "Adj Close", "length":20, 
             "col_names": ("s_QQE", "s_RSI_MA", "s_QQE_L", "s_QQE_S")},
             
             #QQE_Fast
-            {"kind": "qqe", "close": "Adj_close", "length":6, "smooth":3, "factor":2.621,
+            {"kind": "qqe", "close": "Adj Close", "length":6, "smooth":3, "factor":2.621,
             "col_names": ("f_QQE", "f_RSI_MA", "f_QQE_L", "f_QQE_S")},
         
             # >>> TREND INDICATORS <<< #
             
             #ADX
-            {"kind": "adx", "high":"high", "low":"low", "close": "Adj_close"},
+            {"kind": "adx", "high":"high", "low":"low", "close": "Adj Close"},
             
             #MACD
-            {"kind": "macd", "close": "Adj_close"},
+            {"kind": "macd", "close": "Adj Close"},
             
             #TTM Trend
-            {"kind": "ttm_trend", "high":"high", "low":"low", "close": "Adj_close"},
+            {"kind": "ttm_trend", "high":"high", "low":"low", "close": "Adj Close"},
                     
             # >>> VOLATILITY INDICATORS <<< #
             
             #ATR
-            {"kind": "atr", "high":"high", "low":"low", "close": "Adj_close"},
+            {"kind": "atr", "high":"high", "low":"low", "close": "Adj Close"},
             
             # >>> VOLUME INDICATORS <<< #
             
             #AD
-            {"kind": "ad", "high":"high", "low":"low", "close": "Adj_close", "volume":"Volume","open":"open"},
+            {"kind": "ad", "high":"high", "low":"low", "close": "Adj Close", "volume":"Volume","open":"open"},
             
             #CMF
-            {"kind": "cmf", "high":"high", "low":"low", "close": "Adj_close", "volume":"Volume","open":"open"},
+            {"kind": "cmf", "high":"high", "low":"low", "close": "Adj Close", "volume":"Volume","open":"open"},
             
             #OBV
-            {"kind": "obv", "close": "Adj_close", "volume":"Volume"}
+            {"kind": "obv", "close": "Adj Close", "volume":"Volume"}
         ]
     )
     return TotalStrat
@@ -173,12 +174,12 @@ def APMMonthly(data):
 
 @st.cache
 def RDS(data,w1=0.6,w3=0.3,w6=0.1,a=30,b=90,c=180):
-    """Appends four columns of RDS - Relative Distance Strength - to the provided dataframe. "Adj_close" is a required named variable in your provided dataframe.
+    """Appends four columns of RDS - Relative Distance Strength - to the provided dataframe. "Adj Close" is a required named variable in your provided dataframe.
     
     Parameters
     ----------
     data : dataframe
-        A dataframe with the only requirement being a named column of "Adj_close"
+        A dataframe with the only requirement being a named column of "Adj Close"
     w1,w2,w3 : float, optional
         The custom weightings for RDS. Default is set to 60%/30%/10% for weighting of 1m,3m and 6months
     a,b,c : float, optional
@@ -193,13 +194,13 @@ def RDS(data,w1=0.6,w3=0.3,w6=0.1,a=30,b=90,c=180):
     size = len(data)
     df = pd.DataFrame()
     while x<size:
-        lp      = data["Adj_close"].iloc[size-y]
-        m1_low  = data["Adj_close"].iloc[0 if (size-x-a)<0 else (size-x-a):size-x].min()
-        m3_low  = data["Adj_close"].iloc[0 if (size-x-b)<0 else (size-x-b):size-x].min()
-        m6_low  = data["Adj_close"].iloc[0 if (size-x-c)<0 else (size-x-c):size-x].min()
-        m1_high = data["Adj_close"].iloc[0 if (size-x-a)<0 else (size-x-a):size-x].max()
-        m3_high = data["Adj_close"].iloc[0 if (size-x-b)<0 else (size-x-b):size-x].max()
-        m6_high = data["Adj_close"].iloc[0 if (size-x-c)<0 else (size-x-c):size-x].max()
+        lp      = data["Adj Close"].iloc[size-y]
+        m1_low  = data["Adj Close"].iloc[0 if (size-x-a)<0 else (size-x-a):size-x].min()
+        m3_low  = data["Adj Close"].iloc[0 if (size-x-b)<0 else (size-x-b):size-x].min()
+        m6_low  = data["Adj Close"].iloc[0 if (size-x-c)<0 else (size-x-c):size-x].min()
+        m1_high = data["Adj Close"].iloc[0 if (size-x-a)<0 else (size-x-a):size-x].max()
+        m3_high = data["Adj Close"].iloc[0 if (size-x-b)<0 else (size-x-b):size-x].max()
+        m6_high = data["Adj Close"].iloc[0 if (size-x-c)<0 else (size-x-c):size-x].max()
         d_from_m1_low = (lp/m1_low)-1
         d_from_m3_low = (lp/m3_low)-1
         d_from_m6_low = (lp/m6_low)-1
@@ -221,7 +222,7 @@ def RDS(data,w1=0.6,w3=0.3,w6=0.1,a=30,b=90,c=180):
 
 @st.cache
 def PivotPoints(data):  
-    PP = pd.Series((data['high'] + data['low'] + data['Adj_close']) / 3)  
+    PP = pd.Series((data['high'] + data['low'] + data['Adj Close']) / 3)  
     R1 = pd.Series(2 * PP - data['low'])  
     S1 = pd.Series(2 * PP - data['high'])  
     R2 = pd.Series(PP + data['high'] - data['low'])  
@@ -232,6 +233,179 @@ def PivotPoints(data):
     pdf = pd.DataFrame(pivots)  
     pdf=pdf.shift(periods=1, axis="index")
     data= data.join(pdf)  
+    return data
+
+def SMA(x, length):
+    # simple moving average
+    return x.rolling(length).mean()
+
+def WildMA(x, length):
+    # Wilder's moving average
+    a = 1/length
+    return x.ewm(alpha=a, min_periods=length).mean()
+
+# def TrendUp_pd(n, Up, AdjC):
+#     TrendUp = np.empty(n)
+#     TrendUp[0] = Up.head(1)
+#     for i in range(1,n):
+#         if AdjC.iloc[i-1] > TrendUp[i-1]:
+#             TrendUp[i] = (max(Up.iloc[i], TrendUp[i-1]))
+#         else:
+#             TrendUp[i] = Up.iloc[i]
+#     return TrendUp
+
+# def TrendDn_pd(n, Dn, AdjC):
+#     TrendDn = np.empty(n)
+#     TrendDn[0] = Dn.head(1)
+#     for i in range(1,n):
+#         if AdjC.iloc[i-1] < TrendDn[i-1]:
+#             TrendDn[i] = (min(Dn.iloc[i], TrendDn[i-1]))
+#         else:
+#             TrendDn[i] = Dn.iloc[i]
+#     return TrendDn
+
+@nb.njit()
+def TrendUp_np(Up, AdjC):
+    n = len(Up)
+    TrendUp = np.empty(n)
+    TrendUp[0] = Up[0]
+    for i in range(1,n):
+        if AdjC[i-1] > TrendUp[i-1]:
+            TrendUp[i] = (max(Up[i], TrendUp[i-1]))
+        else:
+            TrendUp[i] = Up[i]
+    return TrendUp
+
+@nb.njit()
+def TrendDn_np(Dn, AdjC):
+    n = len(Dn)
+    TrendDn = np.empty(n)
+    TrendDn[0] = Dn[0]
+    for i in range(1,n):
+        if AdjC[i-1] < TrendDn[i-1]:
+            TrendDn[i] = (min(Dn[i], TrendDn[i-1]))
+        else:
+            TrendDn[i] = Dn[i]
+    return TrendDn
+
+# @nb.njit()
+# def extremum_np(Trend, high, low):
+#     n = len(Trend)
+#     ex = np.empty(n)
+#     ex[0] = 0
+#     for i in range(1,n):
+#         if (Trend[i] > 0) and (Trend[i-1] < 0):
+#             ex[i] = high[i]
+#         elif (Trend[i] < 0) and (Trend[i-1] > 0):
+#             ex[i] = low[i]
+#         elif Trend[i] == True:
+#             ex[i] = max(ex[i-1], high[i])
+#         elif Trend[i] == False:
+#             ex[i] = min(ex[i-1], low[i])
+#         else:
+#             ex[i] = ex[i-1]
+
+@st.cache(allow_output_mutation=True)
+def SwingArms(data, ATRPeriod=28, ATRFactor=5):
+    # SwingArms Technical Indicator TrendUp and TrendDn controls Sup/Res, Trend controls Direction and Trail overall SwingArms function
+
+    # data['HL'] = data['high'] - data['low']
+    # data['HLSMA'] = SMA(data['HL'], ATRPeriod) * 1.5
+    # data['HiLo'] = data[['HL', 'HLSMA']].min(axis=1)
+
+    # same but numpy's fmin is the fastest way to compare 2 dataframe columns min
+    data['HiLo'] = np.fmin(*(data['high'] - data['low']).align(1.5 * SMA(data['high'] - data['low'], ATRPeriod)))
+
+    data['HRef'] = np.where(data['low'] <= data['high'].shift(1),
+                        data['high'] - data['Adj Close'].shift(1),
+                        data['high'] - data['Adj Close'].shift(1) - 0.5 * (data['low'] - data['high'].shift(1)))
+
+    data['LRef'] = np.where(data['high'] != data['low'].shift(1),
+                        data['Adj Close'].shift(1) - data['low'],
+                        data['Adj Close'].shift(1) - data['low'] - 0.5 * (data['low'].shift(1) - data['high']))
+    
+    # data['trueRange'] = data[['HiLo','HRef','LRef']].max(axis=1)
+
+    # same max but faster implementation in numpy with nan handling
+    data['trueRange'] = np.maximum.reduce(np.nan_to_num([data['HiLo'],data['HRef'],data['LRef']]))
+    
+    # this WildMA depends on what value it started from because it's a recursive function
+    # different starting values eg. data since IPO will perform slightly differently vs data since 1yr, 2yr 
+    data['loss'] = ATRFactor * WildMA(data['trueRange'], ATRPeriod)
+    
+    data['Up'] = data['Adj Close'] - data['loss']
+    data['Dn'] = data['Adj Close'] + data['loss']
+    
+    # TrendUp and TrendDn Calculation
+    # get length of df to use in later size calc, can also use length of df columns but need to make sure NaNs are counted for
+    n = len(data)
+    # using pandas series - slower
+    # data['TrendUp'] = TrendUp_pd(n, data['Up'], data['Adj Close'])
+    # data['TrendDn'] = TrendDn_pd(n, data['Dn'], data['Adj Close'])
+
+    # let's write it using numpy arrays - faster, added numba loop opt
+    data['TrendUp'] = TrendUp_np(data['Up'].values, data['Adj Close'].values)
+    data['TrendDn'] = TrendDn_np(data['Dn'].values, data['Adj Close'].values)
+    
+    # If close > TrendDn (Close above downtrend), the Trend is True, and vice versa, the SwingArms value is returned by Trail (the thicker line in the SwingArms)
+    # Works by assigning T or F where the condition is met accordingly, or NaN otherwise. ffill then just forward fills the NaNs with the last non-null value
+
+    data['Trend'] = np.select([data['Adj Close'] > data['TrendDn'].shift(1), data['Adj Close'] < data['TrendUp'].shift(1)], 
+                                            [True, False], default=np.nan)
+
+    data['Trend'].fillna(method='ffill', inplace=True)
+
+    data['Trail'] = np.where(data['Trend'] == True,
+                        data['TrendUp'],
+                        data['TrendDn'])
+
+    # data['ex'] = extremum_np(data['Trend'].values, data['high'].values, data['low'].values)
+
+    # fib1Level = 61.8
+    # fib2Level = 78.6
+    # fib3Level = 88.6
+
+    # data['f1'] = data['ex'] + (data['Trail'] - data['ex']) * fib1Level / 100
+    # data['f2'] = data['ex'] + (data['Trail'] - data['ex']) * fib2Level / 100
+    # data['f3'] = data['ex'] + (data['Trail'] - data['ex']) * fib3Level / 100
+
+    data.drop(columns=['HiLo','HRef','LRef','trueRange','loss','Up','Dn'],inplace=True)
+
+    return data
+
+@nb.njit()
+def MashumeHull_np(HMA, lookback = 2):
+    
+    size = len(HMA)
+    concavity = np.empty(size)
+    concavity[0] = 0
+    HMA_col = np.empty(size)
+    HMA_col[0] = 0
+
+    for i in range(1, size):
+        # concavity = HMA > (HMA[prev] + delta/lookback)
+        # concavity = HMA > nextbar, then assign color codes to HMA_col
+        concavity[i] = HMA[i] > (HMA[i-1] + (HMA[i-1] - HMA[i-1-lookback])/lookback)
+        if concavity[i]: 
+            if HMA[i] < HMA[i-1]: 
+                HMA_col[i] = 3
+            else: 
+                HMA_col[i] = 4
+        else:
+            if HMA[i] > HMA[i-1]: 
+                HMA_col[i] = 1
+            else: 
+                HMA_col[i] = 2
+
+    return concavity, HMA_col
+
+@st.cache(allow_output_mutation=True)
+def MashumeHull(data, lookback=2):
+    HMA = data['HMA_21'].values
+    data['concavity'], data['HMA_col'] = MashumeHull_np(HMA, lookback)
+
+    data['HMA_col'].fillna(method='ffill', inplace=True)
+
     return data
 
 @st.cache(allow_output_mutation=True)
@@ -295,7 +469,7 @@ def load_data(symbol):
         stock_data['me_range'] =  round(stock_data['high']-(stock_data.shift(periods=1).close),4) #max extension
         msd = yf.download(tickers=symb,period=tp, interval='1mo')
         msd = msd.reset_index()
-        msd = msd.rename(columns={"Close": "m_close", "High": "m_high","Low":"m_low","Open":"m_open","Adj Close":"m_Adj_Close","Volume":"m_volume","Date":"month"})
+        msd = msd.rename(columns={"Close": "m_close", "High": "m_high","Low":"m_low","Open":"m_open","Adj Close":"m_Adj Close","Volume":"m_volume","Date":"month"})
         stock_data = stock_data.reset_index().merge(msd,on='month' ,how="left").set_index('Date')
 
     except:
@@ -408,10 +582,48 @@ def load_main_chart(df):
                                 close=df['close'],
                                 name=utick.upper(),
                                 showlegend=True))
-    # add hull moving average
+    # # add hull moving average
+    # if 'Xiu_Hull' in ind_selected:
+    #     fig.add_trace(go.Scatter(x=df.index, y=df['HMA_21'], line={'color': 'lime'},name='HULL_up'))
+    #     fig.add_trace(go.Scatter(x=df.index, y=df['HMA_21'].where(df['HMA_21'] >= df['close']), line={'color': 'red'}, name='HULL_down'))
+
+    # # MashumeHull Concavity
+    # if 'Xiu_Hull' in ind_selected:
+    #     fig.add_trace(go.Scatter(x=df.index, y=df['HMA_21'], line={'color': 'lime'},name='HULL_up'))
+    #     fig.add_trace(go.Scatter(x=df.index, y=df['HMA_21'].where(df['concavity']==True), line={'color': 'red'}, name='HULL_down'))
+
+    # MashumeHull
+    # forward fills the gaps between colors with previous value carried forward by 1 if curr value nan
+    # plotly doesn't support conditional line coloring so line segments needed, unfortunately doesn't look as good cover, with markers to hide?
     if 'Xiu_Hull' in ind_selected:
-        fig.add_trace(go.Scatter(x=df.index, y=df['HMA_21'], line={'color': 'lime'},name='HULL_up'))
-        fig.add_trace(go.Scatter(x=df.index, y=df['HMA_21'].where(df['HMA_21'] >= df['close']), line={'color': 'red'}, name='HULL_down'))
+        fig.add_trace(go.Scatter(x=df.index, y=df['HMA_21'].where(df['HMA_col']==4).ffill(limit=1), line={'color': 'lightgreen'},name='Hull_G'))
+        fig.add_trace(go.Scatter(x=df.index, y=df['HMA_21'].where(df['HMA_col']==3).ffill(limit=1), line={'color': 'darkgreen'},name='Hull_DG'))
+        fig.add_trace(go.Scatter(x=df.index, y=df['HMA_21'].where(df['HMA_col']==2).ffill(limit=1), line={'color': 'red'},name='Hull_R'))
+        fig.add_trace(go.Scatter(x=df.index, y=df['HMA_21'].where(df['HMA_col']==1).ffill(limit=1), line={'color': 'orange'},name='Hull_O'))
+        # add turning points, looked kinda ugly so put on hold for now
+        # fig.add_trace(go.Scatter(x=df.index, y=df['HMA_21'].where(np.logical_and(df['concavity']==True,df['concavity']!=df['concavity'].shift(1))), marker=dict(
+        #     color='white',
+        #     symbol = 'triangle-up',
+        #     line = dict(
+        #     color = 'black',
+        #     width = 1),
+        #     size=5),name='Hull_Up', mode='markers'))
+        # fig.add_trace(go.Scatter(x=df.index, y=df['HMA_21'].where(np.logical_and(df['concavity']==False,df['concavity']!=df['concavity'].shift(1))), marker=dict(
+        #     color='white',
+        #     symbol = 'triangle-down',
+        #     line = dict(
+        #     color = 'black',
+        #     width = 1),
+        #     size=5),name='Hull_Dn', mode='markers'))
+
+    # SwingArms
+    if 'Mach_SwingArms' in ind_selected:
+        #Trail
+        fig.add_trace(go.Scatter(x=df.index, y=df['Trail'], line={'color': 'orange'}, name='SwingArmsFlip'))
+        #TrendUp
+        fig.add_trace(go.Scatter(x=df.index, y=df['TrendUp'].where(df['Trend']==True), line={'color': 'green'}, name='SwingArmsG'))
+        #TrendDn
+        fig.add_trace(go.Scatter(x=df.index, y=df['TrendDn'].where(df['Trend']==False), line={'color': 'red'}, name='SwingArmsR'))
 
     #ADR
     #ADRHigh10
@@ -465,7 +677,7 @@ def load_main_chart(df):
     colors = ['green' if row['close'] - row['open'] >= 0 
             else 'red' for index, row in df.iterrows()]
     fig.add_trace(go.Bar(x=df.index, 
-                        y=df['volume'],
+                        y=df['Volume'],
                         marker_color=colors,
                         showlegend=False
                         ), row=2, col=1)
@@ -611,8 +823,8 @@ def load_main_chart(df):
 def load_joegopgo():
     joe_approved=False
     lp = round(df.tail(1).close[0],2)
-    lvc = df.tail(1).volume[0] #last volume current
-    lvp = df.tail(2).volume[0] #last volume prior
+    lvc = df.tail(1).Volume[0] #last volume current
+    lvp = df.tail(2).Volume[0] #last volume prior
     joe_sma20 =  round(df.tail(1).SMA_20[0],2)
     joe_sma50 =  round(df.tail(1).SMA_50[0],2)
     joe_sma5 =   round(df.tail(1).SMA_5[0],2)
@@ -1023,7 +1235,7 @@ intv = st.sidebar.selectbox(
      #('1d','1m','2m','5m','15m','30m','60m','90m','1h','5d','1wk','1mo','3mo') << Replace w/ this once interval testing has been completed
 ind_selected = st.sidebar.multiselect(
      'Select indicators',
-     ['Bossx_MovingAverages', 'Bossx_GOI_GVOL_Strikes', 'Metaal_OptionLevels', 'Xiu_ADR','Xiu_Hull','Xiu_QQE'],
+     ['Bossx_MovingAverages', 'Bossx_GOI_GVOL_Strikes', 'Metaal_OptionLevels', 'Mach_SwingArms', 'Xiu_ADR','Xiu_Hull','Xiu_QQE'],
      ['Metaal_OptionLevels', 'Xiu_QQE'])
 
 if 'Metaal_OptionLevels' in ind_selected: 
@@ -1071,8 +1283,10 @@ t3_CALL_Weekly_TCvolStrike, t3_CALL_Weekly_TCvolStrike_1, t3_CALL_Weekly_TCvolSt
 # ----------------------------------- LOAD INDICATORS -----------------------------------
 
 APMMonthly(df)
+SwingArms(df)
 TotalStrat = load_indicator_strategy()
 df.ta.strategy(TotalStrat)
+MashumeHull(df)
 
 ##=======>Placeholder for topline metrics, currently just have the current price with % change from prior period closing price, default is daily
 #col1, col2, col3 = st.columns(3)
