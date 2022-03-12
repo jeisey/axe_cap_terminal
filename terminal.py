@@ -1110,6 +1110,7 @@ def seas_charts(tick, cal_input):
     dt_fig.add_trace(go.Scatter(x=df[df['wd_name']=='Thursday']['Date'], y=df[df['wd_name']=='Thursday']['daily_change'].rolling(inp_ma).mean(),name='Thursday',line=dict(color='rgb(255, 183, 3)', width=4)))
     dt_fig.add_trace(go.Scatter(x=df[df['wd_name']=='Friday']['Date'], y=df[df['wd_name']=='Friday']['daily_change'].rolling(inp_ma).mean(),name='Friday',line=dict(color='rgb(251, 133, 0)', width=4)))
     dt_fig.update_layout(title=str(inp_ma)+'sma for Daily % Change')
+    dt_fig.update_yaxes(tickformat=',.0%')
     #monthly aggregate chart
     ma_colors = ['seagreen' if row['perc_change'] >= 0 else 'red' for index, row in m_change_avg.iterrows()]
     ma_fig = go.Figure()
@@ -1215,6 +1216,9 @@ def load_ac_ideas():
 
 #### USER INPUT / INITIAL SIDEBAR VARIABLES ####
 st.sidebar.image('Axe-cap-custom-logo.png')
+if st.sidebar.button("Refresh Data"):
+    # Clear values from *all* st.cache functions:
+    st.legacy_caching.clear_cache()
 st.sidebar.write("**[Submit trade idea?](https://forms.gle/aNfTSnnjuss68Nrq5)**")
 #Placeholder to implement once a second view/dashboard has been created to toggle between.
 #view_type = st.sidebar.selectbox(
@@ -1302,9 +1306,6 @@ st.plotly_chart(main_chart, use_container_width=True,config=plotly_config)
 
 # ----------------------------------- PLOT PUT/CALL RATIOS -----------------------------------
 st.subheader('$'+utick.upper()+' Option Chain')
-if st.button("Refresh Data (Updates Option Chain)"):
-    # Clear values from *all* st.cache functions:
-    st.legacy_caching.clear_cache()
 tpcr, wpcr = load_pcratios()
 pcr_col_1, pcr_col_2 = st.columns(2)
 pcr_col_1.plotly_chart(tpcr, config={'displayModeBar': False})
@@ -1403,5 +1404,3 @@ with st.expander("See Joe's Seal of Approval"):
     else:
         st.subheader('JOE SAYS GTFO '+'$'+utick.upper())
         st.text('This ticker does not get the JOE SEAL OF APPROVAL')
-
-
