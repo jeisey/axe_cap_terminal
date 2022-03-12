@@ -1110,7 +1110,7 @@ def seas_charts(tick, cal_input):
     dt_fig.add_trace(go.Scatter(x=df[df['wd_name']=='Thursday']['Date'], y=df[df['wd_name']=='Thursday']['daily_change'].rolling(inp_ma).mean(),name='Thursday',line=dict(color='rgb(255, 183, 3)', width=4)))
     dt_fig.add_trace(go.Scatter(x=df[df['wd_name']=='Friday']['Date'], y=df[df['wd_name']=='Friday']['daily_change'].rolling(inp_ma).mean(),name='Friday',line=dict(color='rgb(251, 133, 0)', width=4)))
     dt_fig.update_layout(title=str(inp_ma)+'sma for Daily % Change')
-    dt_fig.update_yaxes(tickformat=',.0%')
+    dt_fig.update_yaxes(tickformat=',.1%')
     #monthly aggregate chart
     ma_colors = ['seagreen' if row['perc_change'] >= 0 else 'red' for index, row in m_change_avg.iterrows()]
     ma_fig = go.Figure()
