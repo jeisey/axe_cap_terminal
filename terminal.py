@@ -1205,8 +1205,8 @@ def load_ac_ideas():
     st.markdown("There are currently "+str(idea_count)+' idea(s).')
     for index, row in gdf.iterrows():
         if row['ticker'] == selected_ticker:
-            st.markdown(':wave: ' +('**{}**').format(row['username']) + '--'+ 'created on '+str(row['Timestamp']) )
-            st.markdown(':pushpin: **Price Target:** '+str(row['price_target']) + ' by ' + str(row['pt_date']) ) 
+            st.markdown(':wave: ' +('**{}**').format(row['username']) + '--'+ 'created on '+str(row['Timestamp'].strftime('%B %d, %Y')) )
+            st.markdown(':pushpin: **Price Target:** '+str(row['price_target']) + ' by ' + str(row['pt_date'].strftime('%B %d, %Y')) )  
             st.markdown(':bulb: **Idea:** '+row['idea']) 
             st.image(row['image_upload'])
             st.markdown('--------------------------------') 
@@ -1320,7 +1320,7 @@ with cb_3:
     cb_spiking = st.checkbox('Only show Vol > OI options?',value=False, help="See which contracts are particulary popular today")
 
 #To style the dataframe to be more end-user friendly for legibility
-df_styler = ({'volume': '{:,.0f}','openInterest': '{:,.0f}','strike': '{:,.0f}',"expirationDate": lambda t: t.strftime("%Y-%b-%d")})
+df_styler = ({'volume': '{:,.0f}','openInterest': '{:,.0f}','strike': '{:,.2f}',"expirationDate": lambda t: t.strftime("%Y-%b-%d")})
 
 if (cb_weeklies and cb_todays_trades==False and cb_spiking==False):
     st.dataframe(voi.loc[voi.Weekly].sort_values(by='volume', ascending=False).style.format(df_styler))
