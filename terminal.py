@@ -1219,6 +1219,8 @@ st.sidebar.image('Axe-cap-custom-logo.png')
 if st.sidebar.button("Refresh Data"):
     # Clear values from *all* st.cache functions:
     st.legacy_caching.clear_cache()
+    # Force rerun from top-to-bottom
+    st.experimental_rerun()
 st.sidebar.write("**[Submit trade idea?](https://forms.gle/aNfTSnnjuss68Nrq5)**")
 #Placeholder to implement once a second view/dashboard has been created to toggle between.
 #view_type = st.sidebar.selectbox(
