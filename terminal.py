@@ -18,7 +18,8 @@ st.set_page_config(page_title="Axe Cap Terminal", page_icon="💡",layout="wide"
 
 ##>> FUNCTIONS <<##
 
-@st.cache(allow_output_mutation=True)
+#@st.cache(allow_output_mutation=True)
+@st.experimental_memo
 def load_indicator_strategy():
     TotalStrat = ta.Strategy(
         name="totalstrat",
@@ -100,7 +101,8 @@ def load_indicator_strategy():
     )
     return TotalStrat
 
-@st.cache(allow_output_mutation=True)
+#@st.cache(allow_output_mutation=True)
+@st.experimental_memo
 def APMDaily(data):
     """Requires the open, high, and low values to exist in the provided dataframe >>>'data'. 
     For plotting, fill functions can be used inbetween the adrlow10+adrlow5 and the adrhigh10+adrhigh5.
@@ -137,7 +139,8 @@ def APMDaily(data):
         
     return data
 
-@st.cache(allow_output_mutation=True)
+#@st.cache(allow_output_mutation=True)
+@st.experimental_memo
 def APMMonthly(data):
     """Requires the open, high, and low values to exist in the provided dataframe >>>'data'. 
     For plotting, fill functions can be used inbetween the adrlow10+adrlow5 and the adrhigh10+adrhigh5.
@@ -172,7 +175,8 @@ def APMMonthly(data):
         
     return data
 
-@st.cache
+#@st.cache
+@st.experimental_memo
 def RDS(data,w1=0.6,w3=0.3,w6=0.1,a=30,b=90,c=180):
     """Appends four columns of RDS - Relative Distance Strength - to the provided dataframe. "Adj Close" is a required named variable in your provided dataframe.
     
@@ -220,7 +224,8 @@ def RDS(data,w1=0.6,w3=0.3,w6=0.1,a=30,b=90,c=180):
     data = data.join(df) 
     return data
 
-@st.cache
+#@st.cache
+@st.experimental_memo
 def PivotPoints(data):  
     PP = pd.Series((data['high'] + data['low'] + data['Adj Close']) / 3)  
     R1 = pd.Series(2 * PP - data['low'])  
@@ -305,7 +310,8 @@ def TrendDn_np(Dn, AdjC):
 #         else:
 #             ex[i] = ex[i-1]
 
-@st.cache(allow_output_mutation=True)
+#@st.cache(allow_output_mutation=True)
+@st.experimental_memo
 def SwingArms(data, ATRPeriod=28, ATRFactor=5):
     # SwingArms Technical Indicator TrendUp and TrendDn controls Sup/Res, Trend controls Direction and Trail overall SwingArms function
 
@@ -399,7 +405,8 @@ def MashumeHull_np(HMA, lookback = 2):
 
     return concavity, HMA_col
 
-@st.cache(allow_output_mutation=True)
+#@st.cache(allow_output_mutation=True)
+@st.experimental_memo
 def MashumeHull(data, lookback=2):
     HMA = data['HMA_21'].values
     data['concavity'], data['HMA_col'] = MashumeHull_np(HMA, lookback)
@@ -454,7 +461,8 @@ def options_chain(symbol):
     return options
 
 # ----------------------------------- Load Stock Data -----------------------------------
-@st.cache(allow_output_mutation=True)
+#@st.cache(allow_output_mutation=True)
+@st.experimental_memo
 def load_data(symbol):
     try:
         symb = symbol.upper()
@@ -479,7 +487,8 @@ def load_data(symbol):
         ticker_info = "Not valid"
     return stock_data,ticker_info
 
-@st.cache()
+#@st.cache()
+@st.experimental_memo
 def load_range_dist(df,freq):
     df=df.tail(freq)
     fig = make_subplots(rows=2, cols=2, subplot_titles=("Open-Close Range", "High-Low Range", "Gap Up/Down Range", "Max Extension"))
@@ -522,7 +531,8 @@ def load_range_dist(df,freq):
     fig.append_trace(me, 2,2)
     return fig
 
-@st.cache()
+#@st.cache()
+@st.experimental_memo
 def load_range_means(df,freq=500):
     df=df.tail(freq)
     oc_range_mean = round(df.oc_range.describe().loc['mean'],2)
@@ -563,7 +573,8 @@ def load_range_means(df,freq=500):
 
 # ----------------------------------- Load Main Chart & User Strategies/Indicators -----------------------------------
 
-@st.cache(allow_output_mutation=True)
+#@st.cache(allow_output_mutation=True)
+@st.experimental_memo
 def load_main_chart(df):
  # removing all empty dates
     # build complete timeline from start date to end date
@@ -820,7 +831,8 @@ def load_main_chart(df):
         ))
     return fig
 
-@st.cache
+#@st.cache
+@st.experimental_memo
 def load_joegopgo():
     joe_approved=False
     lp = round(df.tail(1).close[0],2)
@@ -850,7 +862,8 @@ def load_joegopgo():
 
 # ----------------------------------- Load Options Data -----------------------------------
 
-@st.cache(allow_output_mutation=True)
+#@st.cache(allow_output_mutation=True)
+@st.experimental_memo
 def load_voi(odf):
     #max oi strike
     voi = odf[['expirationDate','direction', 'strike','volume','openInterest','lastTradeDate','Weekly','OnlyTodaysTrades','bool_VolSpike']].sort_values(by='openInterest', ascending=False)
@@ -870,7 +883,8 @@ def load_voi(odf):
     hoi_strike_3 = int(voi.groupby(['strike']).sum().reset_index()[['strike','volume','openInterest']].sort_values(by='openInterest', ascending=False).strike.iloc[2])
     return voi, hoi_strike, mvs, hv_strike_1,hv_strike_2,hv_strike_3,hoi_strike_1,hoi_strike_2,hoi_strike_3
     
-@st.cache(allow_output_mutation=True)
+#@st.cache(allow_output_mutation=True)
+@st.experimental_memo
 def load_strikes(odf):
     #####TOTAL VOLUME RATIOS
     #total volume
@@ -957,7 +971,8 @@ def load_strikes(odf):
            t3_CALL_Weekly_TCoiStrike, t3_CALL_Weekly_TCoiStrike_1, t3_CALL_Weekly_TCoiStrike_2, t3_CALL_Weekly_TCoiStrike_3, \
            t3_CALL_Weekly_TCvolStrike, t3_CALL_Weekly_TCvolStrike_1, t3_CALL_Weekly_TCvolStrike_2, t3_CALL_Weekly_TCvolStrike_3
 
-@st.cache(allow_output_mutation=True)
+#@st.cache(allow_output_mutation=True)
+@st.experimental_memo
 def load_pcratios():
     #Total put call ratios
     tpcr = go.Figure()
@@ -1043,7 +1058,8 @@ def load_pcratios():
 
 # ----------------------------------- Multi-use / Misc. Variables -----------------------------------
 
-@st.cache
+#@st.cache
+@st.experimental_memo
 def load_multi_use_vars(df):
     #Multi-use case variables
     lp = df.tail(1).close[0]  #===> last price 
@@ -1053,7 +1069,8 @@ def load_multi_use_vars(df):
 
 # ----------------------------------- Load Seasonality Charts -----------------------------------
 
-@st.cache(allow_output_mutation=True)
+#@st.cache(allow_output_mutation=True)
+@st.experimental_memo
 def seas_charts(tick, cal_input):
     #download data for seasonality based on a Calendar input they can change
     df= yf.download(tick,cal_input,datetime.date.today().strftime("%Y-%m-%d"))
@@ -1218,9 +1235,11 @@ def load_ac_ideas():
 #### USER INPUT / INITIAL SIDEBAR VARIABLES ####
 st.sidebar.image('Axe-cap-custom-logo.png')
 if st.sidebar.button("Refresh Data"):
+    # Clear all in-memory and on-disk memo caches; this clears values from *all* memoized functions:
+    st.experimental_memo.clear()
     # Clear values from *all* st.cache functions:
-    st.legacy_caching.clear_cache()
-
+    # st.legacy_caching.clear_cache()
+    
 st.sidebar.write("**[Submit trade idea?](https://forms.gle/aNfTSnnjuss68Nrq5)**")
 #Placeholder to implement once a second view/dashboard has been created to toggle between.
 #view_type = st.sidebar.selectbox(
@@ -1393,12 +1412,12 @@ with st.expander("Explore Axe Cap Member's $"+utick.upper()+" Trading Ideas"):
 #Joe's Seal of Approval --If a few folks contribute their scanner criteria for a bullish or bearish trade, can turn this into a few columns
 #so it would be "Seal of Approvals"
 with st.expander("See Joe's Seal of Approval"):
-    joe_approved,lp,lvc, lvp, joe_sma5, joe_sma20, joe_sma50, joe_sma200 = load_joegopgo()
+    joe_approved,lp_joe,lvc, lvp, joe_sma5, joe_sma20, joe_sma50, joe_sma200 = load_joegopgo()
     if joe_approved:
         st.subheader('$'+utick.upper()+' gets the JOE SEAL OF APPROVAL')
         st.text('Joe approves this Ticker because...')
-        st.text('Last Price: '+str(lp)+' is greater than five buckaroos')
-        st.text('Last Price: '+str(lp)+' is greater than the 20sma: '+str(joe_sma20))
+        st.text('Last Price: '+str(lp_joe)+' is greater than five buckaroos')
+        st.text('Last Price: '+str(lp_joe)+' is greater than the 20sma: '+str(joe_sma20))
         st.text('The 50sma: '+str(joe_sma50)+' is less than the 20sma: '+str(joe_sma20))
         st.text('The 200sma: '+str(joe_sma200)+' is less than the 5sma: '+str(joe_sma5))
         st.text('The current volume: '+str(lvc)+' is greater than one milly')
