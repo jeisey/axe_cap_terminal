@@ -293,22 +293,23 @@ def TrendDn_np(Dn, AdjC):
             TrendDn[i] = Dn[i]
     return TrendDn
 
-# @nb.njit()
-# def extremum_np(Trend, high, low):
-#     n = len(Trend)
-#     ex = np.empty(n)
-#     ex[0] = 0
-#     for i in range(1,n):
-#         if (Trend[i] > 0) and (Trend[i-1] < 0):
-#             ex[i] = high[i]
-#         elif (Trend[i] < 0) and (Trend[i-1] > 0):
-#             ex[i] = low[i]
-#         elif Trend[i] == True:
-#             ex[i] = max(ex[i-1], high[i])
-#         elif Trend[i] == False:
-#             ex[i] = min(ex[i-1], low[i])
-#         else:
-#             ex[i] = ex[i-1]
+@nb.njit()
+def extremum_np(Trend, high, low):
+    n = len(Trend)
+    ex = np.empty(n)
+    ex[0] = 0
+    for i in range(1,n):
+        if (Trend[i] > 0) and (Trend[i-1] < 0):
+            ex[i] = high[i]
+        elif (Trend[i] < 0) and (Trend[i-1] > 0):
+            ex[i] = low[i]
+        elif Trend[i] == True:
+            ex[i] = max(ex[i-1], high[i])
+        elif Trend[i] == False:
+            ex[i] = min(ex[i-1], low[i])
+        else:
+            ex[i] = ex[i-1]
+    return ex
 
 #@st.cache(allow_output_mutation=True)
 #@st.experimental_memo(ttl=300)
@@ -365,15 +366,15 @@ def SwingArms(data, ATRPeriod=28, ATRFactor=5):
                         data['TrendUp'],
                         data['TrendDn'])
 
-    # data['ex'] = extremum_np(data['Trend'].values, data['high'].values, data['low'].values)
+    data['ex'] = extremum_np(data['Trend'].values, data['high'].values, data['low'].values)
 
-    # fib1Level = 61.8
-    # fib2Level = 78.6
-    # fib3Level = 88.6
+    fib1Level = 61.8
+    fib2Level = 78.6
+    fib3Level = 88.6
 
-    # data['f1'] = data['ex'] + (data['Trail'] - data['ex']) * fib1Level / 100
-    # data['f2'] = data['ex'] + (data['Trail'] - data['ex']) * fib2Level / 100
-    # data['f3'] = data['ex'] + (data['Trail'] - data['ex']) * fib3Level / 100
+    data['f1'] = data['ex'] + (data['Trail'] - data['ex']) * fib1Level / 100
+    data['f2'] = data['ex'] + (data['Trail'] - data['ex']) * fib2Level / 100
+    data['f3'] = data['ex'] + (data['Trail'] - data['ex']) * fib3Level / 100
 
     data.drop(columns=['HiLo','HRef','LRef','trueRange','loss','Up','Dn'],inplace=True)
 
@@ -632,10 +633,24 @@ def load_main_chart(df):
     if 'Mach_SwingArms' in ind_selected:
         #Trail
         fig.add_trace(go.Scatter(x=df.index, y=df['Trail'], line={'color': 'orange'}, name='SwingArmsFlip'))
+
         #TrendUp
         fig.add_trace(go.Scatter(x=df.index, y=df['TrendUp'].where(df['Trend']==True), line={'color': 'green'}, name='SwingArmsG'))
+        #f1 TrendUp
+        fig.add_trace(go.Scatter(x=df.index, y=df['f1'].where(df['Trend']==True), line={'color': 'green'}, showlegend=False, name='Upf1', opacity=0.2))
+        #f2 TrendUp
+        fig.add_trace(go.Scatter(x=df.index, y=df['f2'].where(df['Trend']==True), line={'color': 'green'}, showlegend=False, name='Upf2', opacity=0.4))
+        #f3 TrendUp
+        fig.add_trace(go.Scatter(x=df.index, y=df['f3'].where(df['Trend']==True), line={'color': 'green'}, showlegend=False, name='Upf3', opacity=0.5))
+
         #TrendDn
         fig.add_trace(go.Scatter(x=df.index, y=df['TrendDn'].where(df['Trend']==False), line={'color': 'red'}, name='SwingArmsR'))
+        #f1 TrendDn
+        fig.add_trace(go.Scatter(x=df.index, y=df['f1'].where(df['Trend']==False), line={'color': 'red'}, showlegend=False, name='Dnf1', opacity=0.2))
+        #f2 TrendDn
+        fig.add_trace(go.Scatter(x=df.index, y=df['f2'].where(df['Trend']==False), line={'color': 'red'}, showlegend=False, name='Dnf2', opacity=0.4))
+        #f3 TrendDn
+        fig.add_trace(go.Scatter(x=df.index, y=df['f3'].where(df['Trend']==False), line={'color': 'red'}, showlegend=False, name='Dnf3', opacity=0.5))
 
     #ADR
     #ADRHigh10
