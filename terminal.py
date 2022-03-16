@@ -19,7 +19,7 @@ st.set_page_config(page_title="Axe Cap Terminal", page_icon="💡",layout="wide"
 ##>> FUNCTIONS <<##
 
 #@st.cache(allow_output_mutation=True)
-@st.experimental_memo(ttl=300)
+@st.experimental_memo(ttl=300, max_entries=10)
 def load_indicator_strategy():
     TotalStrat = ta.Strategy(
         name="totalstrat",
@@ -102,7 +102,7 @@ def load_indicator_strategy():
     return TotalStrat
 
 #@st.cache(allow_output_mutation=True)
-@st.experimental_memo(ttl=300)
+@st.experimental_memo(ttl=300, max_entries=10)
 def APMDaily(data):
     """Requires the open, high, and low values to exist in the provided dataframe >>>'data'. 
     For plotting, fill functions can be used inbetween the adrlow10+adrlow5 and the adrhigh10+adrhigh5.
@@ -140,7 +140,7 @@ def APMDaily(data):
     return data
 
 #@st.cache(allow_output_mutation=True)
-@st.experimental_memo(ttl=300)
+#@st.experimental_memo(ttl=300)
 def APMMonthly(data):
     """Requires the open, high, and low values to exist in the provided dataframe >>>'data'. 
     For plotting, fill functions can be used inbetween the adrlow10+adrlow5 and the adrhigh10+adrhigh5.
@@ -176,7 +176,7 @@ def APMMonthly(data):
     return data
 
 #@st.cache
-@st.experimental_memo(ttl=300)
+#@st.experimental_memo(ttl=300)
 def RDS(data,w1=0.6,w3=0.3,w6=0.1,a=30,b=90,c=180):
     """Appends four columns of RDS - Relative Distance Strength - to the provided dataframe. "Adj Close" is a required named variable in your provided dataframe.
     
@@ -225,7 +225,7 @@ def RDS(data,w1=0.6,w3=0.3,w6=0.1,a=30,b=90,c=180):
     return data
 
 #@st.cache
-@st.experimental_memo(ttl=300)
+#@st.experimental_memo(ttl=300)
 def PivotPoints(data):  
     PP = pd.Series((data['high'] + data['low'] + data['Adj Close']) / 3)  
     R1 = pd.Series(2 * PP - data['low'])  
@@ -311,7 +311,7 @@ def TrendDn_np(Dn, AdjC):
 #             ex[i] = ex[i-1]
 
 #@st.cache(allow_output_mutation=True)
-@st.experimental_memo(ttl=300)
+#@st.experimental_memo(ttl=300)
 def SwingArms(data, ATRPeriod=28, ATRFactor=5):
     # SwingArms Technical Indicator TrendUp and TrendDn controls Sup/Res, Trend controls Direction and Trail overall SwingArms function
 
@@ -406,7 +406,7 @@ def MashumeHull_np(HMA, lookback = 2):
     return concavity, HMA_col
 
 #@st.cache(allow_output_mutation=True)
-@st.experimental_memo(ttl=300)
+#@st.experimental_memo(ttl=300)
 def MashumeHull(data, lookback=2):
     HMA = data['HMA_21'].values
     data['concavity'], data['HMA_col'] = MashumeHull_np(HMA, lookback)
@@ -416,7 +416,7 @@ def MashumeHull(data, lookback=2):
     return data
 
 #@st.cache(allow_output_mutation=True)
-@st.experimental_memo(ttl=300)
+@st.experimental_memo(ttl=300, max_entries=10)
 def options_chain(symbol):
     exps = tk.options
 
@@ -462,7 +462,7 @@ def options_chain(symbol):
 
 # ----------------------------------- Load Stock Data -----------------------------------
 #@st.cache(allow_output_mutation=True)
-@st.experimental_memo(ttl=300)
+@st.experimental_memo(ttl=300, max_entries=10)
 def load_data(symbol):
     try:
         symb = symbol.upper()
@@ -488,7 +488,7 @@ def load_data(symbol):
     return stock_data,ticker_info
 
 #@st.cache()
-@st.experimental_memo(ttl=300)
+#@st.experimental_memo(ttl=300)
 def load_range_dist(df,freq):
     df=df.tail(freq)
     fig = make_subplots(rows=2, cols=2, subplot_titles=("Open-Close Range", "High-Low Range", "Gap Up/Down Range", "Max Extension"))
@@ -532,7 +532,7 @@ def load_range_dist(df,freq):
     return fig
 
 #@st.cache()
-@st.experimental_memo(ttl=300)
+#@st.experimental_memo(ttl=300)
 def load_range_means(df,freq=500):
     df=df.tail(freq)
     oc_range_mean = round(df.oc_range.describe().loc['mean'],2)
@@ -574,7 +574,7 @@ def load_range_means(df,freq=500):
 # ----------------------------------- Load Main Chart & User Strategies/Indicators -----------------------------------
 
 #@st.cache(allow_output_mutation=True)
-@st.experimental_memo(ttl=300)
+#@st.experimental_memo(ttl=300)
 def load_main_chart(df):
  # removing all empty dates
     # build complete timeline from start date to end date
@@ -832,7 +832,7 @@ def load_main_chart(df):
     return fig
 
 #@st.cache
-@st.experimental_memo(ttl=300)
+#@st.experimental_memo(ttl=300)
 def load_joegopgo():
     joe_approved=False
     lp = round(df.tail(1).close[0],2)
@@ -863,7 +863,7 @@ def load_joegopgo():
 # ----------------------------------- Load Options Data -----------------------------------
 
 #@st.cache(allow_output_mutation=True)
-@st.experimental_memo(ttl=300)
+#@st.experimental_memo(ttl=300)
 def load_voi(odf):
     #max oi strike
     voi = odf[['expirationDate','direction', 'strike','volume','openInterest','lastTradeDate','Weekly','OnlyTodaysTrades','bool_VolSpike']].sort_values(by='openInterest', ascending=False)
@@ -884,7 +884,7 @@ def load_voi(odf):
     return voi, hoi_strike, mvs, hv_strike_1,hv_strike_2,hv_strike_3,hoi_strike_1,hoi_strike_2,hoi_strike_3
     
 #@st.cache(allow_output_mutation=True)
-@st.experimental_memo(ttl=300)
+#@st.experimental_memo(ttl=300)
 def load_strikes(odf):
     #####TOTAL VOLUME RATIOS
     #total volume
@@ -972,7 +972,7 @@ def load_strikes(odf):
            t3_CALL_Weekly_TCvolStrike, t3_CALL_Weekly_TCvolStrike_1, t3_CALL_Weekly_TCvolStrike_2, t3_CALL_Weekly_TCvolStrike_3
 
 #@st.cache(allow_output_mutation=True)
-@st.experimental_memo(ttl=300)
+#@st.experimental_memo(ttl=300)
 def load_pcratios():
     #Total put call ratios
     tpcr = go.Figure()
@@ -1059,7 +1059,7 @@ def load_pcratios():
 # ----------------------------------- Multi-use / Misc. Variables -----------------------------------
 
 #@st.cache
-@st.experimental_memo(ttl=300)
+@st.experimental_memo(ttl=300, max_entries=10)
 def load_multi_use_vars(df):
     #Multi-use case variables
     lp = df.tail(1).close[0]  #===> last price 
@@ -1070,7 +1070,7 @@ def load_multi_use_vars(df):
 # ----------------------------------- Load Seasonality Charts -----------------------------------
 
 #@st.cache(allow_output_mutation=True)
-@st.experimental_memo(ttl=300)
+@st.experimental_memo(ttl=300, max_entries=10)
 def seas_charts(tick, cal_input):
     #download data for seasonality based on a Calendar input they can change
     df= yf.download(tick,cal_input,datetime.date.today().strftime("%Y-%m-%d"))
