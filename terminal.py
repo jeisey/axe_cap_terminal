@@ -419,9 +419,8 @@ def MashumeHull(data, lookback=2):
 
 #@st.cache(allow_output_mutation=True)
 @st.experimental_memo(ttl=300, max_entries=10)
-def options_chain(symbol):
+def options_chain(_tk):
     exps = tk.options
-
     # Get options for each expiration
     options = pd.DataFrame()
     for e in exps:
@@ -1205,7 +1204,9 @@ def load_ac_tweets():
                         st.markdown(tweet.text)
                         st.markdown('--------------------------------')
                         z+=1
-
+    if z == 0:
+        st.markdown('No tweets could be found for '+str(utick.upper())) 
+                        
 def load_ac_ideas():
     #acess public gsheets csv file and store in dataframe
     gdf = pd.read_csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vSAOcVEnPyR3jB_k9uAgN5GIIFI2S_d4l9Lt6w0XnnJMEFKKZVLxiiNP5P5RxqUHBXJl1vjV-4APFJY/pub?output=csv')
@@ -1350,7 +1351,7 @@ df,tk = load_data(utick)
 lp, lpp, oi_min = load_multi_use_vars(df)
 
 #Full Options dataframe
-odf = options_chain(utick)
+odf = options_chain(tk)
 
 #Volume & OI dataframe
 voi, hoi_strike, mvs, hv_strike_1,hv_strike_2,hv_strike_3,hoi_strike_1,hoi_strike_2,hoi_strike_3 = load_voi(odf)
@@ -1468,7 +1469,7 @@ with st.expander("Explore Axe Cap Member's $"+utick.upper()+" Trading Ideas"):
     if cb_show_ideas:
         st.markdown('#### :bulb: Ideas submitted by Axe Cap Users through the Terminal. :bulb:')
         load_ac_ideas()
-        st.markdown('#### :bird: Ideas from Axe Cap Twitter Accounts (if blank, none could be found within past 7 days) :bird:')
+        st.markdown('#### :bird: Ideas from Axe Cap Twitter Accounts :bird:')
         load_ac_tweets()
         
 # ----------------------------------- DISPLAY RANKINGS -----------------------------------
