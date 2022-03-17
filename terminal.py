@@ -419,7 +419,9 @@ def MashumeHull(data, lookback=2):
 
 #@st.cache(allow_output_mutation=True)
 @st.experimental_memo(ttl=300, max_entries=10)
-def options_chain(_tk):
+def options_chain(symbol):
+    symb = symbol.upper()
+    tk = yf.Ticker(symb)
     exps = tk.options
     # Get options for each expiration
     options = pd.DataFrame()
@@ -1351,7 +1353,7 @@ df,tk = load_data(utick)
 lp, lpp, oi_min = load_multi_use_vars(df)
 
 #Full Options dataframe
-odf = options_chain(tk)
+odf = options_chain(utick)
 
 #Volume & OI dataframe
 voi, hoi_strike, mvs, hv_strike_1,hv_strike_2,hv_strike_3,hoi_strike_1,hoi_strike_2,hoi_strike_3 = load_voi(odf)
