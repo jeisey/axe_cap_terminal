@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import datetime
 from datetime import timedelta
 from plotly.subplots import make_subplots
+import plotly.figure_factory as ff
 import pandas_ta as ta
 import time
 import calendar
@@ -1243,7 +1244,55 @@ def load_ac_ideas():
             st.markdown(':pushpin: **Price Target:** '+str(row['price_target']) + ' by ' + str(row['pt_date'].strftime('%B %d, %Y')) )  
             st.markdown(':bulb: **Idea:** '+row['idea']) 
             st.image(row['image_upload'])
-            st.markdown('--------------------------------') 
+            st.markdown('--------------------------------')
+
+@st.experimental_memo(ttl=300, max_entries=10)
+def load_gsheet_data():
+    df = pd.read_csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vS-8BzYdnRw_BMYJCEy9HkPX-CIcgBilenf4VCFAfGAacooTCCdhdiLCcJEFvkUysfsPZzp9fOrSOMZ/pub?output=csv')
+    return df
+
+def load_gantt():
+    df = load_gsheet_data()
+    gdf = df[['Enter stock ticker:','Timestamp','What day do you project this Price Target to be hit by?','Hit','Win Date']]
+    for i, row in gdf.iterrows():
+        if str(row['Hit'])=='False':
+            gdf.at[i,'Win Date'] = row['What day do you project this Price Target to be hit by?']
+    gdf = gdf.rename(columns={"Enter stock ticker:": "Task", "Timestamp": "Start",'Win Date':'Finish'})
+    colors = {False: 'rgb(220, 0, 0)', True: 'rgb(0, 255, 100)'}
+
+    fig = ff.create_gantt(gdf, colors=colors, index_col='Hit', show_colorbar=True,
+                        group_tasks=True)
+    return fig
+
+def load_rankings_table():
+    df = load_gsheet_data()
+    number_of_ideas = df.groupby('Select your username')["Timestamp"].count().sort_values(ascending=False).rename_axis(['Username']).rename("Number of Ideas") 
+    avg_days_to_hit = df[df['Hit']==True].groupby('Select your username')["Days to Hit"].mean().sort_values(ascending=False).rename_axis(['Username']).rename("Avg Days to Hit")
+    number_of_hits = df[df['Hit']==True].groupby('Select your username')["Timestamp"].count().sort_values(ascending=False).rename_axis(['Username']).rename("Number of Hits") 
+    max_up = df.groupby('Select your username')["Max Move Upside"].max().sort_values(ascending=False).rename_axis(['Username']).rename("Max Upside %") 
+    max_down = df.groupby('Select your username')["Max Move Downside"].min().sort_values(ascending=False).rename_axis(['Username']).rename("Max Downside %") 
+    avg_max_up = df.groupby('Select your username')["Max Move Upside"].mean().sort_values(ascending=False).rename_axis(['Username']).rename("Avg Upside %") 
+    avg_max_down = df.groupby('Select your username')["Max Move Downside"].mean().sort_values(ascending=False).rename_axis(['Username']).rename("Avg Downside %")
+    #concat all the series into one DataFrame
+    tdf = pd.concat([number_of_ideas,number_of_hits,avg_days_to_hit, max_up, max_down, avg_max_up, avg_max_down],axis=1)
+    #Calculate Win Rates
+    tdf['Win Rate'] = tdf['Number of Hits'] / tdf['Number of Ideas']
+    #Fill Nas
+    tdf['Win Rate']  = tdf['Win Rate'].fillna(0)
+    tdf['Number of Ideas']  = tdf['Number of Ideas'].fillna(0)
+    tdf['Number of Hits']  = tdf['Number of Hits'].fillna(0)
+    tdf['Avg Days to Hit']  = tdf['Avg Days to Hit'].fillna(0)
+    tdf['Max Upside %']  = tdf['Max Upside %'].fillna(0)
+    tdf['Max Downside %']  = tdf['Max Downside %'].fillna(0)
+    tdf['Avg Upside %']  = tdf['Avg Upside %'].fillna(0)
+    tdf['Avg Downside %']  = tdf['Avg Downside %'].fillna(0)
+    tdf_styler = ({'Number of Hits': '{:,.0f}','Avg Days to Hit': '{:,.0f}',
+                    'Max Upside %': '{:.2%}','Max Downside %': '{:.2%}',
+                    'Avg Upside %': '{:.2%}','Avg Downside %': '{:.2%}',
+                    'Win Rate': '{:.2%}'})
+    st.dataframe(tdf.style.format(tdf_styler))
+           
+
 
 # ----------------------------------- SIDEBAR -----------------------------------
 
@@ -1421,7 +1470,15 @@ with st.expander("Explore Axe Cap Member's $"+utick.upper()+" Trading Ideas"):
         load_ac_ideas()
         st.markdown('#### :bird: Ideas from Axe Cap Twitter Accounts (if blank, none could be found within past 7 days) :bird:')
         load_ac_tweets()
-
+        
+# ----------------------------------- DISPLAY RANKINGS -----------------------------------
+with st.expander("BETA: View Axe Cap User Rankings/Leaderboard"):
+    cb_show_rankings = st.checkbox('Show rankings?', value=False,help='Computes performance and rankings for submitted trade ideas')
+    if cb_show_rankings:
+        st.markdown('###### Rankings')
+        load_rankings_table()
+        gantt = load_gantt()
+        st.plotly_chart(gantt, use_container_width=True,config=plotly_config)
 
 # ----------------------------------- DISPLAY SEAL OF APPROVALS -----------------------------------
 #Joe's Seal of Approval --If a few folks contribute their scanner criteria for a bullish or bearish trade, can turn this into a few columns
