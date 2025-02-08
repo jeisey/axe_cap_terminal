@@ -427,39 +427,44 @@ def options_chain(symbol):
     options = pd.DataFrame()
     for e in exps:
         opt = tk.option_chain(e)
-        opt = pd.DataFrame().append(opt.calls).append(opt.puts)
-        opt['expirationDate'] = e
-        options = options.append(opt, ignore_index=True)
-    options['expirationDate'] = pd.to_datetime(options['expirationDate'])
-    options['dte'] = (options['expirationDate'] - datetime.datetime.today()).dt.days / 365
-
-    #Calculate minimum expiration date
+        calls = pd.DataFrame(opt.calls)
+        puts = pd.DataFrame(opt.puts)
+        calls['expirationDate'] = e
+        puts['expirationDate'] = e
+        options = pd.concat([options, calls, puts], ignore_index=True)
+    if 'expirationDate' in options.columns:
+        options['expirationDate'] = pd.to_datetime(options['expirationDate'])
+        options['dte'] = (options['expirationDate'] - datetime.datetime.today()).dt.days / 365
+    else:
+        raise KeyError("The 'expirationDate' column is missing from the options DataFrame.")
+    
+    # Calculate minimum expiration date
     min_exp_date = options.expirationDate.min()
-    #Start of Week
+    # Start of Week
     start = min_exp_date - timedelta(days=min_exp_date.weekday())
     options['start'] = start
-    #End of Week
+    # End of Week
     end = start + timedelta(days=6)
-    options['end']=end
-    #Boolean if option is a weekly expiry
+    options['end'] = end
+    # Boolean if option is a weekly expiry
     options['Weekly'] = options['expirationDate'] <= options['end']
 
     # Boolean column if the option is a CALL
-    options.loc[options['contractSymbol'].str[4:].apply(lambda x: "C" in x), 'direction'] = 'Call'  
-    options.loc[options['contractSymbol'].str[4:].apply(lambda x: "P" in x), 'direction'] = 'Put'  
+    options.loc[options['contractSymbol'].str[4:].apply(lambda x: "C" in x), 'direction'] = 'Call'
+    options.loc[options['contractSymbol'].str[4:].apply(lambda x: "P" in x), 'direction'] = 'Put'
     
-    options[['bid', 'ask', 'strike','volume','openInterest']] = options[['bid', 'ask', 'strike','volume','openInterest']].apply(pd.to_numeric)
+    options[['bid', 'ask', 'strike', 'volume', 'openInterest']] = options[['bid', 'ask', 'strike', 'volume', 'openInterest']].apply(pd.to_numeric)
     options.volume = options.volume.round(0)
     options.openInterest = options.openInterest.round(0)
-    options['mark'] = (options['bid'] + options['ask']) / 2 # Calculate the midpoint of the bid-ask
-    options['vol_prems'] = round(options['mark']*options['volume'],4)
-    options['oi_prems']  = round(options['mark']*options['openInterest'],4)
-    options['bool_VolSpike'] = options['volume']>options['openInterest']
-    options['vol_vs_oi_weighted'] = ((options['volume']*options['openInterest'])-1)*options['volume']
+    options['mark'] = (options['bid'] + options['ask']) / 2  # Calculate the midpoint of the bid-ask
+    options['vol_prems'] = round(options['mark'] * options['volume'], 4)
+    options['oi_prems'] = round(options['mark'] * options['openInterest'], 4)
+    options['bool_VolSpike'] = options['volume'] > options['openInterest']
+    options['vol_vs_oi_weighted'] = ((options['volume'] * options['openInterest']) - 1) * options['volume']
     options['OnlyTodaysTrades'] = options.lastTradeDate.dt.strftime("%Y-%m-%d") == datetime.date.today().strftime("%Y-%m-%d")
     
     # Drop unnecessary and meaningless columns
-    options = options.drop(columns = ['contractSize', 'currency'])
+    options = options.drop(columns=['contractSize', 'currency'])
 
     return options
 
