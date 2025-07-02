@@ -472,28 +472,56 @@ def options_chain(symbol):
 #@st.cache(allow_output_mutation=True)
 @st.cache_data(ttl=300, max_entries=10)
 def load_data(symbol):
-    try:
-        symb = symbol.upper()
-        ticker_info = yf.Ticker(symb)
-        stock_data = yf.download(tickers=symb,period=tp, interval=intv)
-        stock_data = stock_data.rename(columns={"Close": "close", "High": "high","Low":"low","Open":"open"})
-        stock_data['hl2']=(stock_data['high']+stock_data['low'])/2
-        stock_data['month'] = stock_data.index.to_numpy().astype('datetime64[M]')
-        stock_data['hl_range'] = round(stock_data['high']-stock_data['low'],4)
-        stock_data['oc_range'] = round(stock_data['close']-stock_data['open'],4) 
-        stock_data['gap_range'] = round(stock_data['open']-(stock_data.shift(periods=1).close),4)
-        stock_data['bullbear'] = stock_data['close'] >= (stock_data.shift(periods=1).close)
-        stock_data['me_range'] =  round(stock_data['high']-(stock_data.shift(periods=1).close),4) #max extension
-        msd = yf.download(tickers=symb,period=tp, interval='1mo')
-        msd = msd.reset_index()
-        msd = msd.rename(columns={"Close": "m_close", "High": "m_high","Low":"m_low","Open":"m_open","Adj Close":"m_Adj Close","Volume":"m_volume","Date":"month"})
-        stock_data = stock_data.reset_index().merge(msd,on='month' ,how="left").set_index('Date')
+    """Download historical price data for *symbol*.
 
-    except:
-        "Not a valid ticker, please try again"
-        stock_data = "Not valid"
-        ticker_info = "Not valid"
-    return stock_data,ticker_info
+    Returns a DataFrame and ticker info. If the download fails, an empty
+    DataFrame is returned and an error is displayed."""
+
+    symb = symbol.upper()
+
+    try:
+        ticker_info = yf.Ticker(symb)
+        stock_data = yf.download(tickers=symb, period=tp, interval=intv)
+        stock_data = stock_data.rename(
+            columns={"Close": "close", "High": "high", "Low": "low", "Open": "open"}
+        )
+        stock_data["hl2"] = (stock_data["high"] + stock_data["low"]) / 2
+        stock_data["month"] = stock_data.index.to_numpy().astype("datetime64[M]")
+        stock_data["hl_range"] = round(stock_data["high"] - stock_data["low"], 4)
+        stock_data["oc_range"] = round(stock_data["close"] - stock_data["open"], 4)
+        stock_data["gap_range"] = round(
+            stock_data["open"] - (stock_data.shift(periods=1).close), 4
+        )
+        stock_data["bullbear"] = stock_data["close"] >= (
+            stock_data.shift(periods=1).close
+        )
+        stock_data["me_range"] = round(
+            stock_data["high"] - (stock_data.shift(periods=1).close), 4
+        )
+        msd = yf.download(tickers=symb, period=tp, interval="1mo")
+        msd = msd.reset_index()
+        msd = msd.rename(
+            columns={
+                "Close": "m_close",
+                "High": "m_high",
+                "Low": "m_low",
+                "Open": "m_open",
+                "Adj Close": "m_Adj Close",
+                "Volume": "m_volume",
+                "Date": "month",
+            }
+        )
+        stock_data = (
+            stock_data.reset_index()
+            .merge(msd, on="month", how="left")
+            .set_index("Date")
+        )
+
+    except Exception as e:
+        st.error(f"Failed to load data for {symb}: {e}")
+        return pd.DataFrame(), None
+
+    return stock_data, ticker_info
 
 #@st.cache()
 #@st.cache_data(ttl=300)
@@ -1083,10 +1111,18 @@ def load_pcratios():
 #@st.cache
 @st.cache_data(ttl=300, max_entries=10)
 def load_multi_use_vars(df):
-    #Multi-use case variables
-    lp = df.tail(1).close[0]  #===> last price 
-    lpp = df.tail(2).close[0]  #===> prior period price 
-    oi_min = lp*.2 #===> 80% threshold for OI strike consideration, could convert this to user controlled variable
+    """Return price based helper variables used across the app.
+
+    If *df* is empty or missing the expected ``close`` column, ``None`` values
+    are returned so caller code can handle the absence of data gracefully.
+    """
+
+    if df is None or df.empty or "close" not in df:
+        return None, None, None
+
+    lp = df["close"].iloc[-1]
+    lpp = df["close"].iloc[-2] if len(df) > 1 else lp
+    oi_min = lp * 0.2  # 80% threshold for OI strike consideration
     return lp, lpp, oi_min
 
 # ----------------------------------- Load Seasonality Charts -----------------------------------
@@ -1353,6 +1389,8 @@ st.sidebar.caption('The data and information shared here is not financial advice
 
 ##>>START DATA LOAD BASED ON DEFAULT VALUES<<##
 df,tk = load_data(utick)
+if df is None or df.empty:
+    st.stop()
 
 #Multi-use case variables
 lp, lpp, oi_min = load_multi_use_vars(df)
