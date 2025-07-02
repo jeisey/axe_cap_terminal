@@ -176,8 +176,7 @@ def APMMonthly(data):
         
     return data
 
-#@st.cache
-#@st.cache_data(ttl=300)
+@st.cache_data(ttl=300)
 def RDS(data,w1=0.6,w3=0.3,w6=0.1,a=30,b=90,c=180):
     """Appends four columns of RDS - Relative Distance Strength - to the provided dataframe. "Adj Close" is a required named variable in your provided dataframe.
     
@@ -217,7 +216,7 @@ def RDS(data,w1=0.6,w3=0.3,w6=0.1,a=30,b=90,c=180):
         RDS6m = round((d_from_m6_low * d_to_m6_high),4)*100
         RDSWeighted = round(((RDS1m*w1)+(RDS3m*w3)+(RDS6m*w6)),2)
         RDS = {'Index':data.index[size-y],'RDS1m':RDS1m, 'RDS3m':RDS3m, 'RDS6m':RDS6m, 'RDSWeighted':RDSWeighted}
-        df = df.append(RDS, ignore_index=True)
+        df = pd.concat([df, pd.DataFrame([RDS])], ignore_index=True)
         x+=1
         y+=1
     df   = df.reindex(index=df.index[::-1])
@@ -225,8 +224,7 @@ def RDS(data,w1=0.6,w3=0.3,w6=0.1,a=30,b=90,c=180):
     data = data.join(df) 
     return data
 
-#@st.cache
-#@st.cache_data(ttl=300)
+@st.cache_data(ttl=300)
 def PivotPoints(data):  
     PP = pd.Series((data['high'] + data['low'] + data['Adj Close']) / 3)  
     R1 = pd.Series(2 * PP - data['low'])  
@@ -361,7 +359,7 @@ def SwingArms(data, ATRPeriod=28, ATRFactor=5):
     data['Trend'] = np.select([data['Adj Close'] > data['TrendDn'].shift(1), data['Adj Close'] < data['TrendUp'].shift(1)], 
                                             [True, False], default=np.nan)
 
-    data['Trend'].fillna(method='ffill', inplace=True)
+    data['Trend'].ffill(inplace=True)
 
     data['Trail'] = np.where(data['Trend'] == True,
                         data['TrendUp'],
@@ -413,11 +411,10 @@ def MashumeHull(data, lookback=2):
     HMA = data['HMA_21'].values
     data['concavity'], data['HMA_col'] = MashumeHull_np(HMA, lookback)
 
-    data['HMA_col'].fillna(method='ffill', inplace=True)
+    data['HMA_col'].ffill(inplace=True)
 
     return data
 
-#@st.cache(allow_output_mutation=True)
 @st.cache_data(ttl=300, max_entries=10)
 def options_chain(symbol):
     symb = symbol.upper()
@@ -469,7 +466,6 @@ def options_chain(symbol):
     return options
 
 # ----------------------------------- Load Stock Data -----------------------------------
-#@st.cache(allow_output_mutation=True)
 @st.cache_data(ttl=300, max_entries=10)
 def load_data(symbol):
     """Download historical price data for *symbol*.
@@ -482,16 +478,20 @@ def load_data(symbol):
     try:
         ticker_info = yf.Ticker(symb)
         stock_data = yf.download(tickers=symb, period=tp, interval=intv)
+        
+        # Check if data was successfully downloaded
+        if stock_data.empty:
+            st.error(f"No data found for {symb}")
+            return pd.DataFrame(), None
+            
         stock_data = stock_data.rename(
             columns={"Close": "close", "High": "high", "Low": "low", "Open": "open"}
         )
         stock_data["hl2"] = (stock_data["high"] + stock_data["low"]) / 2
-        # Convert dates to month start so dtype matches monthly data
-        stock_data["month"] = (
-            pd.to_datetime(stock_data.index)
-            .dt.to_period("M")
-            .dt.to_timestamp()
-        )
+        
+        # Fix: DatetimeIndex already has datetime properties, no need for pd.to_datetime
+        stock_data["month"] = stock_data.index.to_period("M").to_timestamp()
+        
         stock_data["hl_range"] = round(stock_data["high"] - stock_data["low"], 4)
         stock_data["oc_range"] = round(stock_data["close"] - stock_data["open"], 4)
         stock_data["gap_range"] = round(
@@ -503,6 +503,8 @@ def load_data(symbol):
         stock_data["me_range"] = round(
             stock_data["high"] - (stock_data.shift(periods=1).close), 4
         )
+        
+        # Download monthly data
         msd = yf.download(tickers=symb, period=tp, interval="1mo")
         msd = msd.reset_index()
         msd = msd.rename(
@@ -516,9 +518,10 @@ def load_data(symbol):
                 "Date": "month",
             }
         )
-        msd["month"] = (
-            pd.to_datetime(msd["month"]).dt.to_period("M").dt.to_timestamp()
-        )
+        
+        # Fix: Handle the Date/month column properly
+        msd["month"] = pd.to_datetime(msd["month"]).dt.to_period("M").dt.to_timestamp()
+        
         stock_data = (
             stock_data.reset_index()
             .merge(msd, on="month", how="left")
@@ -531,8 +534,7 @@ def load_data(symbol):
 
     return stock_data, ticker_info
 
-#@st.cache()
-#@st.cache_data(ttl=300)
+@st.cache_data(ttl=300)
 def load_range_dist(df,freq):
     df=df.tail(freq)
     fig = make_subplots(rows=2, cols=2, subplot_titles=("Open-Close Range", "High-Low Range", "Gap Up/Down Range", "Max Extension"))
@@ -575,8 +577,7 @@ def load_range_dist(df,freq):
     fig.append_trace(me, 2,2)
     return fig
 
-#@st.cache()
-#@st.cache_data(ttl=300)
+@st.cache_data(ttl=300)
 def load_range_means(df,freq=500):
     df=df.tail(freq)
     oc_range_mean = round(df.oc_range.describe().loc['mean'],2)
@@ -615,10 +616,9 @@ def load_range_means(df,freq=500):
         me_msg = 'The average max extension range has been exceeded, the average is '+str(me_range_mean)+' and for current period is '+str(round(df.tail(1).me_range[0],2))
     return op,lc,oc_range_mean,hl_range_mean,gap_range_mean,me_range_mean,ext_room,oc_msg,hl_msg,gap_msg,me_msg
 
-# ----------------------------------- Load Main Chart & User Strategies/Indicators -----------------------------------
+# ----------------------------------- Load Main Chart & User Strategies/Indicators ----------------------------------
 
-#@st.cache(allow_output_mutation=True)
-#@st.cache_data(ttl=300)
+@st.cache_data(ttl=300)
 def load_main_chart(df):
  # removing all empty dates
     # build complete timeline from start date to end date
@@ -1120,18 +1120,21 @@ def load_pcratios():
 @st.cache_data(ttl=300, max_entries=10)
 def load_multi_use_vars(df):
     """Return price based helper variables used across the app.
-
-    If *df* is empty or missing the expected ``close`` column, ``None`` values
+    
+    If *df* is empty or missing the expected columns, None values
     are returned so caller code can handle the absence of data gracefully.
     """
-
     if df is None or df.empty or "close" not in df:
         return None, None, None
-
-    lp = df["close"].iloc[-1]
-    lpp = df["close"].iloc[-2] if len(df) > 1 else lp
-    oi_min = lp * 0.2  # 80% threshold for OI strike consideration
-    return lp, lpp, oi_min
+    
+    try:
+        lp = df["close"].iloc[-1]
+        lpp = df["close"].iloc[-2] if len(df) > 1 else lp
+        oi_min = lp * 0.2  # 80% threshold for OI strike consideration
+        return lp, lpp, oi_min
+    except Exception as e:
+        st.error(f"Error calculating variables: {e}")
+        return None, None, None
 
 # ----------------------------------- Load Seasonality Charts -----------------------------------
 
@@ -1396,8 +1399,9 @@ st.sidebar.caption('The data and information shared here is not financial advice
 # ----------------------------------- LOAD STOCK & OPTION DATA -----------------------------------
 
 ##>>START DATA LOAD BASED ON DEFAULT VALUES<<##
-df,tk = load_data(utick)
+df, tk = load_data(utick)
 if df is None or df.empty:
+    st.error(f"Unable to load data for {utick}. Please check the ticker symbol and try again.")
     st.stop()
 
 #Multi-use case variables
