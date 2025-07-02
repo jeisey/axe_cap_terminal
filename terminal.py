@@ -486,7 +486,12 @@ def load_data(symbol):
             columns={"Close": "close", "High": "high", "Low": "low", "Open": "open"}
         )
         stock_data["hl2"] = (stock_data["high"] + stock_data["low"]) / 2
-        stock_data["month"] = stock_data.index.to_numpy().astype("datetime64[M]")
+        # Convert dates to month start so dtype matches monthly data
+        stock_data["month"] = (
+            pd.to_datetime(stock_data.index)
+            .dt.to_period("M")
+            .dt.to_timestamp()
+        )
         stock_data["hl_range"] = round(stock_data["high"] - stock_data["low"], 4)
         stock_data["oc_range"] = round(stock_data["close"] - stock_data["open"], 4)
         stock_data["gap_range"] = round(
@@ -510,6 +515,9 @@ def load_data(symbol):
                 "Volume": "m_volume",
                 "Date": "month",
             }
+        )
+        msd["month"] = (
+            pd.to_datetime(msd["month"]).dt.to_period("M").dt.to_timestamp()
         )
         stock_data = (
             stock_data.reset_index()
