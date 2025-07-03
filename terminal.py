@@ -474,65 +474,232 @@ def load_data(symbol):
     DataFrame is returned and an error is displayed."""
 
     symb = symbol.upper()
-
+    
+    # Initialize variables
+    stock_data = pd.DataFrame()
+    ticker_info = None
+    
+    # Add small delay to avoid rate limiting
+    time.sleep(0.5)
+    
     try:
+        # Method 1: Try using Ticker object with history method
         ticker_info = yf.Ticker(symb)
-        stock_data = yf.download(tickers=symb, period=tp, interval=intv)
         
-        # Check if data was successfully downloaded
-        if stock_data.empty:
-            st.error(f"No data found for {symb}")
-            return pd.DataFrame(), None
+        # First, let's try the history method which often works better
+        try:
+            stock_data = ticker_info.history(period=tp, interval=intv, auto_adjust=False)
             
-        stock_data = stock_data.rename(
-            columns={"Close": "close", "High": "high", "Low": "low", "Open": "open"}
-        )
-        stock_data["hl2"] = (stock_data["high"] + stock_data["low"]) / 2
+            # Remove timezone info if present
+            if not stock_data.empty and hasattr(stock_data.index, 'tz'):
+                stock_data.index = stock_data.index.tz_localize(None)
+                
+        except Exception as e:
+            print(f"History method failed: {e}")
+            stock_data = pd.DataFrame()
         
-        # Fix: DatetimeIndex already has datetime properties, no need for pd.to_datetime
-        stock_data["month"] = stock_data.index.to_period("M").to_timestamp()
+        # Method 2: If history failed, try download with different parameters
+        if stock_data.empty:
+            try:
+                # Calculate date range
+                end_date = datetime.datetime.now()
+                period_map = {
+                    '1d': 1, '5d': 5, '1mo': 30, '3mo': 90,
+                    '6mo': 180, '1y': 365, '2y': 730, '5y': 1825,
+                    '10y': 3650, 'ytd': (end_date.timetuple().tm_yday),
+                    'max': 7300  # 20 years
+                }
+                
+                days = period_map.get(tp, 730)
+                start_date = end_date - datetime.timedelta(days=days)
+                
+                # Try with explicit parameters and error handling
+                stock_data = yf.download(
+                    tickers=symb,
+                    start=start_date,
+                    end=end_date,
+                    interval=intv,
+                    auto_adjust=True,
+                    actions=True,
+                    threads=False,  # Single thread to avoid issues
+                    progress=False,
+                    show_errors=False  # Suppress yfinance error messages
+                )
+                
+            except Exception as e:
+                print(f"Download with dates failed: {e}")
+                stock_data = pd.DataFrame()
         
-        stock_data["hl_range"] = round(stock_data["high"] - stock_data["low"], 4)
-        stock_data["oc_range"] = round(stock_data["close"] - stock_data["open"], 4)
-        stock_data["gap_range"] = round(
-            stock_data["open"] - (stock_data.shift(periods=1).close), 4
+        # Method 3: Try basic download as last resort
+        if stock_data.empty:
+            try:
+                stock_data = yf.download(
+                    symb, 
+                    period=tp, 
+                    interval=intv, 
+                    progress=False,
+                    show_errors=False
+                )
+            except Exception as e:
+                print(f"Basic download failed: {e}")
+                stock_data = pd.DataFrame()
+        
+        # Check if we got any data
+        if stock_data.empty:
+            st.error(f"Unable to fetch data for {symb}. Possible causes:")
+            st.error("• Yahoo Finance API might be temporarily unavailable")
+            st.error("• The ticker symbol might be invalid or delisted")
+            st.error("• Rate limiting - try again in a few seconds")
+            st.info("💡 Try clicking 'Refresh Data' or use a different ticker")
+            return pd.DataFrame(), None
+        
+        # Process the data
+        # Handle both single-level and multi-level column names
+        if isinstance(stock_data.columns, pd.MultiIndex):
+            # For multi-level columns from yf.download
+            stock_data.columns = stock_data.columns.droplevel(1)
+        
+        # Ensure column names are strings
+        stock_data.columns = [str(col) for col in stock_data.columns]
+        
+        # Rename columns to lowercase
+        column_mapping = {
+            'Open': 'open',
+            'High': 'high',
+            'Low': 'low',
+            'Close': 'close',
+            'Adj Close': 'Adj Close',
+            'Volume': 'Volume'
+        }
+        
+        # Only rename columns that exist
+        rename_dict = {k: v for k, v in column_mapping.items() if k in stock_data.columns}
+        stock_data = stock_data.rename(columns=rename_dict)
+        
+        # Check for required columns
+        required_columns = ['open', 'high', 'low', 'close']
+        missing_columns = [col for col in required_columns if col not in stock_data.columns]
+        
+        if missing_columns:
+            # Try to recover by using Adj Close if Close is missing
+            if 'Adj Close' in stock_data.columns and 'close' not in stock_data.columns:
+                stock_data['close'] = stock_data['Adj Close']
+            else:
+                st.error(f"Missing required columns: {missing_columns}")
+                return pd.DataFrame(), None
+        
+        # Ensure we have Adj Close and Volume
+        if 'Adj Close' not in stock_data.columns:
+            stock_data['Adj Close'] = stock_data['close']
+        if 'Volume' not in stock_data.columns:
+            stock_data['Volume'] = 0
+        
+        # Add calculated columns
+        stock_data['hl2'] = (stock_data['high'] + stock_data['low']) / 2
+        stock_data['month'] = stock_data.index.to_period('M').to_timestamp()
+        stock_data['hl_range'] = round(stock_data['high'] - stock_data['low'], 4)
+        stock_data['oc_range'] = round(stock_data['close'] - stock_data['open'], 4)
+        stock_data['gap_range'] = round(
+            stock_data['open'] - stock_data['close'].shift(1), 4
         )
-        stock_data["bullbear"] = stock_data["close"] >= (
-            stock_data.shift(periods=1).close
-        )
-        stock_data["me_range"] = round(
-            stock_data["high"] - (stock_data.shift(periods=1).close), 4
+        stock_data['bullbear'] = stock_data['close'] >= stock_data['close'].shift(1)
+        stock_data['me_range'] = round(
+            stock_data['high'] - stock_data['close'].shift(1), 4
         )
         
         # Download monthly data
-        msd = yf.download(tickers=symb, period=tp, interval="1mo")
-        msd = msd.reset_index()
-        msd = msd.rename(
-            columns={
-                "Close": "m_close",
-                "High": "m_high",
-                "Low": "m_low",
-                "Open": "m_open",
-                "Adj Close": "m_Adj Close",
-                "Volume": "m_volume",
-                "Date": "month",
-            }
-        )
+        try:
+            # Try to get monthly data
+            msd = ticker_info.history(period=tp, interval='1mo', auto_adjust=False)
+            
+            if msd.empty:
+                # Fallback: resample daily data to monthly
+                msd = stock_data.resample('MS').agg({
+                    'open': 'first',
+                    'high': 'max',
+                    'low': 'min',
+                    'close': 'last',
+                    'Adj Close': 'last',
+                    'Volume': 'sum'
+                }).dropna()
+            
+            # Process monthly data
+            msd = msd.reset_index()
+            
+            # Handle different possible index names
+            if 'Date' in msd.columns:
+                date_col = 'Date'
+            elif 'index' in msd.columns:
+                date_col = 'index'
+            else:
+                date_col = msd.columns[0]  # Assume first column is date
+            
+            msd = msd.rename(columns={
+                date_col: 'month',
+                'open': 'm_open',
+                'high': 'm_high',
+                'low': 'm_low',
+                'close': 'm_close',
+                'Open': 'm_open',
+                'High': 'm_high',
+                'Low': 'm_low',
+                'Close': 'm_close',
+                'Adj Close': 'm_Adj Close',
+                'Volume': 'm_volume'
+            })
+            
+            # Ensure month column is properly formatted
+            msd['month'] = pd.to_datetime(msd['month']).dt.to_period('M').dt.to_timestamp()
+            
+            # Merge with daily data
+            stock_data = (
+                stock_data.reset_index()
+                .merge(msd, on='month', how='left')
+                .set_index('Date')
+            )
+            
+            # Fill missing monthly columns
+            if 'm_open' not in stock_data.columns:
+                stock_data['m_open'] = stock_data['open']
+            if 'm_high' not in stock_data.columns:
+                stock_data['m_high'] = stock_data['high']
+            if 'm_low' not in stock_data.columns:
+                stock_data['m_low'] = stock_data['low']
+            if 'm_close' not in stock_data.columns:
+                stock_data['m_close'] = stock_data['close']
+            if 'm_Adj Close' not in stock_data.columns:
+                stock_data['m_Adj Close'] = stock_data['Adj Close']
+            if 'm_volume' not in stock_data.columns:
+                stock_data['m_volume'] = stock_data['Volume']
+                
+        except Exception as e:
+            print(f"Monthly data error: {e}")
+            # Add dummy monthly columns to prevent downstream errors
+            stock_data['m_open'] = stock_data['open']
+            stock_data['m_high'] = stock_data['high']
+            stock_data['m_low'] = stock_data['low']
+            stock_data['m_close'] = stock_data['close']
+            stock_data['m_Adj Close'] = stock_data['Adj Close']
+            stock_data['m_volume'] = stock_data['Volume']
         
-        # Fix: Handle the Date/month column properly
-        msd["month"] = pd.to_datetime(msd["month"]).dt.to_period("M").dt.to_timestamp()
+        # Final check
+        if len(stock_data) < 10:
+            st.warning(f"Limited data available for {symb} - only {len(stock_data)} days")
         
-        stock_data = (
-            stock_data.reset_index()
-            .merge(msd, on="month", how="left")
-            .set_index("Date")
-        )
-
+        return stock_data, ticker_info
+        
     except Exception as e:
-        st.error(f"Failed to load data for {symb}: {e}")
+        error_msg = str(e)
+        if "JSONDecodeError" in error_msg:
+            st.error(f"Yahoo Finance API error for {symb}. This is usually temporary.")
+            st.info("Solutions:")
+            st.info("• Wait a few seconds and click 'Refresh Data'")
+            st.info("• Try a different ticker (e.g., AAPL, MSFT)")
+            st.info("• Clear the cache using the sidebar button")
+        else:
+            st.error(f"Error loading {symb}: {error_msg}")
+        
         return pd.DataFrame(), None
-
-    return stock_data, ticker_info
 
 @st.cache_data(ttl=300)
 def load_range_dist(df,freq):
